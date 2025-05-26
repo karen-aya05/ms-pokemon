@@ -1,6 +1,6 @@
 'use strict'
 
-const logger = require('./common/utils/Logger/logger') // la ruta donde guardaste logger.js
+const logger = require('./common/utils/Logger/logger') 
 const Controller = require('./src/controllers/process')
 
 const handler = async (event, context) => {
