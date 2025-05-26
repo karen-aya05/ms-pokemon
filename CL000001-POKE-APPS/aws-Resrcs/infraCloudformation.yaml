@@ -1,0 +1,435 @@
+Transform: AWS::Serverless-2016-10-31
+AWSTemplateFormatVersion: '2010-09-09'
+Description: POKEMON APP
+
+############## Metadata #####################
+
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: 'General'
+        Parameters:
+          - ProjectCode
+          - ProjectName
+          - Environment
+          - Alias
+          - LevelLog
+      - Label:
+          default: 'Cognito'
+        Parameters:
+          - PubliApiCognitoUserPool
+      - Label:
+          default: 'ApiGateway'
+        Parameters:
+          - ApiStage
+          - ApiType
+          - ApiDomainName
+    
+
+############## Parameters ##################
+
+Parameters:
+  ############## General TAGs ##############
+  ProjectName:
+    Type: String
+    Description: 'Nombre del proyecto (en minuscula)'
+    AllowedPattern: '^[a-zA-Z0-9-]*$'
+    Default: Poke
+  ProjectCode:
+    Type: String
+    Description: 'Nombre del proyecto (en minuscula)'
+    AllowedPattern: 'CL\d{5}'
+    Default: CL000001
+  Environment:
+    Type: String
+    Description: 'Ambiente (dev|qa|pdn)'
+    Default: DEV
+    AllowedValues:
+      - QA
+
+  ApiStage:
+    Type: String
+    Description: 'The state of API'
+    Default: 'v1'
+  Alias:
+    Type: String
+    Description: 'alias lambdas'
+    Default: ''
+
+  ############### User Pool Arn #########################
+
+  PubliApiCognitoUserPool:
+    Type: String
+    Description: 'ARN del UserPool Publico'
+    MinLength: 1
+
+   ############## API Gateway ##############
+  ApiBasePath:
+    Type: String
+    Description: 'Path base'
+    AllowedPattern: '^[a-z0-9-]*$'
+    Default: api
+
+  ApiStageName:
+    Type: String
+    Description: 'Nombre del stage del API.'
+    AllowedPattern: '^[a-z0-9-]*$'
+    Default: dev
+
+  PokemonApiBaseUrl:
+    Type: String
+    Description: 'URL base de la API pública de Pokémon'
+    Default: https://pokeapi.co/api/v2/pokemon
+
+
+  ############### Logging ###############################
+
+  LevelLog:
+    Type: String
+    Description: 'Nivel de logging'
+    Default: 'ALL'
+    AllowedValues:
+      - 'ALL'
+      - 'TRACE'
+      - 'DEBUG'
+      - 'INFO'
+      - 'WARN'
+      - 'ERROR'
+      - 'FATAL'
+      - 'OFF'
+  
+ 
+############### Global Variables ######################
+
+Globals:
+  Function:
+    Tracing: Active
+    Handler: index.handler
+    Runtime: nodejs20.x
+    MemorySize: 256
+    AutoPublishAlias: 'live'
+    Timeout: 300
+    Environment:
+      Variables:
+        APPID: !Join ['-', [!Ref ProjectCode, !Ref ProjectName]]
+        ENVIRONMENT: !Ref Environment
+        LEVEL_LOG: !Ref LevelLog
+     
+    Tags:
+        fdr:general:project-code: !Ref ProjectCode
+        fdr:general:project-name: !Ref ProjectName
+        fdr:general:environment: !Ref Environment
+
+############## Resources ################################
+
+Resources:
+  ############## ApiGateway##############
+
+  ApiGatewayMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      DomainName: !Ref ApiDomainName
+      RestApiId: !Ref ApiGatewayRestApi
+      BasePath: !Ref ApiBasePath
+
+
+  ############## Cognito ################################
+
+  CognitoResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      Identifier: 'pokemon-api'
+      Name: !Sub '${ProjectCode}-${ProjectName}-${Environment}-UsrPoolResServer'
+      Scopes:
+        - ScopeName: 'all'
+          ScopeDescription: 'Permiso sobre todos los servicios del API'
+      UserPoolId: !Ref PubliApiCognitoUserPool
+
+  UserPoolTokenClient:
+    DependsOn: CognitoResourceServer
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub '${ProjectCode}-${ProjectName}-${Environment}-App-UsrPoolClient'
+      UserPoolId: !Ref PubliApiCognitoUserPool
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthScopes:
+        - !Sub '${CognitoResourceServer}/all'
+      SupportedIdentityProviders:
+        - COGNITO
+      GenerateSecret: true
+
+############## RestAPI ################################
+
+  PokemonRestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref ApiStage
+      TracingEnabled: true
+      EndpointConfiguration:
+        Type: REGIONAL
+      Name: !Sub '${ProjectCode}-${ProjectName}-Public-RestApi'
+      GatewayResponses:
+        THROTTLED:
+          StatusCode: '409'
+          ResponseTemplates:
+            application/json: '
+              {
+              "id": "$context.requestId",
+              "code": "ER00128",
+              "title": $context.error.messageString,
+              "detail": "$context.error.validationErrorString"
+              }'
+        BAD_REQUEST_PARAMETERS:
+          StatusCode: '400'
+          ResponseTemplates:
+            application/json: '
+              {
+              "id": "$context.requestId",
+              "code": "ER00128",
+              "title": $context.error.messageString,
+              "detail": "$context.error.validationErrorString"
+              }'
+        BAD_REQUEST_BODY:
+          StatusCode: '400'
+          ResponseTemplates:
+            application/json: '
+              {
+              "id": "$context.requestId",
+              "code": "ER00001",
+              "title": $context.error.messageString,
+              "detail": "$context.error.validationErrorString"
+              }'
+      MethodSettings:
+        - HttpMethod: '*'
+          ResourcePath: '/*'
+          MetricsEnabled: true
+          LoggingLevel: INFO
+          DataTraceEnabled: true
+          ThrottlingRateLimit: 14
+          ThrottlingBurstLimit: 7
+      Auth:
+        ResourcePolicy:
+          CustomStatements:
+            - Action:
+                - execute-api:Invoke
+              Effect: Allow
+              Resource:
+                - execute-api:/*/*/*
+              Principal: '*'
+      DefinitionBody:
+        swagger: 2.0
+        info:
+          version: 1.0.0
+          title: RestApi
+        openapi: '3.0.1'
+        x-amazon-apigateway-request-validators:
+          RequestValidator:
+            validateRequestParameters: true
+            validateRequestBody: true
+        paths:
+          /createPokemon:
+            post:
+              tags:
+                - "all"
+              security:
+                - CognitoAuth:
+                    - 'pokemon-api/all'
+              requestBody:
+                required: true
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/createPokemonBody"
+              parameters:
+                - in: header
+                  name: Authorization
+                  schema:
+                    type: string
+                    pattern: '^[a-zA-Z0-9-_]*$'
+                    minLength: 10
+                    maxLength: 3000
+                    example: 'Bearer ey234nadjyh4'
+                  description: 'Token de autorizacion del consumidor'
+                  required: true
+              responses:
+                '200':
+                  statusCode: '200'
+              x-amazon-apigateway-request-validator: RequestValidator
+              x-amazon-apigateway-integration:
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionCreateClientFolder.Arn}${Alias}/invocations
+                httpMethod: "POST"
+                type: "AWS"
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseTemplates:
+                      application/json: ''
+                requestParameters:
+                  integration.request.header.Content-Type: "'application/json'"
+          /pokemons:
+            get:
+              tags:
+                - "all"
+              security:
+                - CognitoAuth:
+                    - 'pokemon-api/all'
+              parameters:
+                - in: header
+                  name: Authorization
+                  schema:
+                    type: string
+                    pattern: '^[a-zA-Z0-9-_]*$'
+                    minLength: 10
+                    maxLength: 3000
+                    example: 'Bearer ey234nadjyh4'
+                  description: 'Token de autorizacion del consumidor'
+                  required: true
+                - in: query       
+                  name: name
+                  schema:
+                    type: string
+                    minLength: 1
+                    maxLength: 30
+                    pattern: '^[a-zA-Z0-9]*$'   
+                  required: false
+                  description: 'Nombre del Pokémon para filtrar (opcional)'
+              responses:
+                "200":
+                  description: OK
+                "400":
+                  description: Bad Request  
+              x-amazon-apigateway-request-validator: RequestValidator
+              x-amazon-apigateway-integration:
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionGetPokemons.Arn}${Alias}/invocations
+                httpMethod: "POST"
+                type: "aws_proxy"
+                responses:
+                  default:
+                    statusCode: '200'
+                    responseTemplates:
+                      application/json: ''
+                requestParameters:
+                  integration.request.header.Content-Type: "'application/json'"
+        components:
+          schemas:
+            createFolderBody:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: "nombre completo del Pokemon"
+                  minLength: 2
+          securitySchemes:
+            CognitoAuth:
+              type: apiKey
+              name: Authorization
+              in: header
+              x-amazon-apigateway-authtype: cognito_user_pools
+              x-amazon-apigateway-authorizer:
+                type: cognito_user_pools
+                providerARNs:
+                  - !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${PubliApiCognitoUserPool}
+      Tags:
+        fdr:general:project-code: !Ref ProjectCode
+        fdr:general:project-name: !Ref ProjectName
+        fdr:general:environment: !Ref Environment
+
+  ############## Table Dynamo ##############################
+  PokemonTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: "GS1"
+          KeySchema:
+            - AttributeName: SK
+              KeyType: HASH
+            - AttributeName: PK
+              KeyType: RANGE
+          Projection:
+            ProjectionType: "ALL"
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub "${ProjectCode}-${ProjectName}-Table-Pokemon-${Environment}"
+      TimeToLiveSpecification:
+        Enabled: true
+        AttributeName: "TTL"
+      Tags:
+        - Key: fdr:general:project-code
+          Value: !Ref ProjectCode
+        - Key: fdr:general:project-name
+          Value: !Ref ProjectName
+        - Key: fdr:general:environment
+          Value: !Ref Environment
+
+  ############## Lambdas ################################
+
+  FunctionCreatePokemon:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: '${ProjectCode}-${ProjectName}-CreatePokemon-${Environment}-Lambda'
+      InlineCode: exports.handler = async (event) => ({body:'Pending on upload'})
+      Environment:
+        Variables:
+          POKEMON_DYNAMO_TABLE: !Ref PokemonTable
+          POKEMON_BASE_URL: !Ref PokemonApiBaseUrl
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:PutItem
+              Resource: !GetAtt PokemonTable.Arn
+
+  FunctionGetPokemons:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: '${ProjectCode}-${ProjectName}-GetPokemons-${Environment}-Lambda'
+      InlineCode: exports.handler = async (event) => ({body:'Pending on upload'})
+      Environment:
+        Variables:
+          POKEMON_DYNAMO_TABLE: !Ref PokemonTable
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+              Resource: !GetAtt PokemonTable.Arn
+
+  
+
+  ############## Lambdas::Permission ##############
+
+  FunctionCreatePokemon:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Sub ${FunctionCreatePokemon.Arn}${Alias}
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PokemonRestApi}/*/*/*
+
+  FunctionGetPokemons:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Sub ${FunctionGetPokemons.Arn}${Alias}
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PokemonRestApi}/*/*/*
+
+ 
+
