@@ -2,7 +2,7 @@ const Joi = require('joi')
 
 const pokemonValidation = Joi.object({
   name: Joi.string()
-    .pattern(/^[a-zA-Z0-9-]+$/) 
+    .pattern(/^[a-zA-Z0-9-]+$/)
     .min(2)
     .max(25)
     .required()

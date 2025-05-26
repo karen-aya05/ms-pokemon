@@ -2,6 +2,7 @@
 
 const Logger = require('./common/Logger/logger')
 const Service = require('../services/process')
+const { pokemonValidation } = require('../../common/utils/validation/paramsValidation')
 
 const process = async (event) => {
   let result
