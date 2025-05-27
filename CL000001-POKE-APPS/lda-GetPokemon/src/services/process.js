@@ -12,7 +12,7 @@ const getPokemons = async (name) => {
       if (!pokemon) {
         throw ERRORS.NOT_FOUND_POKEMON
       }
-      return responsePokemon(pokemon)
+      return  responsePokemon(pokemon)
     }
 
     const pokemons = await DynamoProvider.getAllPokemons()

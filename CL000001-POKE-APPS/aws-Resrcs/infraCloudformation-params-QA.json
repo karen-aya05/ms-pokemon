@@ -8,6 +8,6 @@
         "ApiDomainName": "api.qa.poke",
         "ApiStage": "v1",
         "Alias": "",
-           "PokemonApiBaseUrl":"https://pokeapi.co"
+        "PokemonApiBaseUrl":"https://pokeapi.co"
     }
 }

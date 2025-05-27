@@ -1,8 +1,8 @@
 const Joi = require('joi')
 
-const pokemonValidation = Joi.object({
+const pokemonValidationSchema = Joi.object({
   name: Joi.string()
-    .pattern(/^[a-zA-Z0-9-]+$/) // guion sin escape
+    .pattern(/^[a-zA-Z0-9-]+$/)
     .min(2)
     .max(25)
     .required()
@@ -14,5 +14,7 @@ const pokemonValidation = Joi.object({
       'any.required': 'Name is required'
     })
 })
+
+const pokemonValidation = (data) => pokemonValidationSchema.validate(data)
 
 module.exports = { pokemonValidation }

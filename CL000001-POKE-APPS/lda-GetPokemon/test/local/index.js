@@ -5,10 +5,11 @@ const lambda = require('../../index')
 const eventApi = {
   resource: '/',
   path: '',
-  httpMethod: 'POst',
-  body: JSON.stringify({
+  httpMethod: 'GET',
+   queryStringParameters: {
     name: 'pikachu'
-  }),
+  },
+
   isBase64Encoded: false
 }
 

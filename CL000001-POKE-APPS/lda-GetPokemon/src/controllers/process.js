@@ -11,7 +11,7 @@ const process = async (event) => {
     const name = event.queryStringParameters ? event.queryStringParameters.name : null
 
     if (name) {
-      const { error } = pokemonValidation({ name })
+      const { error } = await pokemonValidation({ name })
       if (error) {
         return {
           statusCode: 400,
