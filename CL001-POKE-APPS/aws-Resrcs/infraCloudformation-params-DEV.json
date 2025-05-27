@@ -4,10 +4,11 @@
         "ProjectName": "Poke",
         "Environment": "DEV",
         "LevelLog": "ALL",
-        "PubliApiCognitoUserPool": "",
-        "ApiDomainName": "api.dev.poke",
+        "PubliApiCognitoUserPool": "us-east-1_feIej0IsC",
+        "ApiDomainName": "https://us-east-1feiej0isc.auth.us-east-1.amazoncognito.com",
         "ApiStage": "v1",
         "Alias": "",
         "PokemonApiBaseUrl":"https://pokeapi.co"
+    
     }
 }

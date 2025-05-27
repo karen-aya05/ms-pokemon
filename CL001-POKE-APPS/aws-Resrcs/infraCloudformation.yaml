@@ -62,6 +62,7 @@ Parameters:
     Type: String
     Description: 'ARN del UserPool Publico'
     MinLength: 1
+    Default: us-east-1_feIej0IsC
 
    ############## API Gateway ##############
   ApiBasePath:
@@ -75,6 +76,12 @@ Parameters:
     Description: 'Nombre del stage del API.'
     AllowedPattern: '^[a-z0-9-]*$'
     Default: dev
+  
+  ApiDomainName: 
+    Type: String
+    Description: 'Nombre del dominio'
+    Default: https://us-east-1feiej0isc.auth.us-east-1.amazoncognito.com
+
 
   PokemonApiBaseUrl:
     Type: String
@@ -129,7 +136,7 @@ Resources:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
       DomainName: !Ref ApiDomainName
-      RestApiId: !Ref ApiGatewayRestApi
+      RestApiId: !Ref PokemonRestApi
       BasePath: !Ref ApiBasePath
 
 
@@ -258,7 +265,7 @@ Resources:
                   statusCode: '200'
               x-amazon-apigateway-request-validator: RequestValidator
               x-amazon-apigateway-integration:
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionCreateClientFolder.Arn}${Alias}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionCreatePokemon.Arn}${Alias}/invocations
                 httpMethod: "POST"
                 type: "AWS"
                 responses:
@@ -302,7 +309,7 @@ Resources:
                   description: Bad Request  
               x-amazon-apigateway-request-validator: RequestValidator
               x-amazon-apigateway-integration:
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionGetPokemons.Arn}${Alias}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionGetPokemon.Arn}${Alias}/invocations
                 httpMethod: "POST"
                 type: "aws_proxy"
                 responses:
@@ -314,7 +321,7 @@ Resources:
                   integration.request.header.Content-Type: "'application/json'"
         components:
           schemas:
-            createFolderBody:
+            createPokemonBody:
               type: object
               required:
                 - name
