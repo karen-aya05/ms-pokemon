@@ -1,8 +1,8 @@
-# CL000001-POKE-APPS
+# CL001-POKE-APPS
 
 ## Descripción
 
-**CL000001-POKE-APPS** es un backend desarrollado en AWS para gestionar servicios relacionados con Pokémon.  
+**CL001-POKE-APPS** es un backend desarrollado en AWS para gestionar servicios relacionados con Pokémon.  
 Utiliza infraestructura como código mediante **CloudFormation (YAML)** y cuenta con dos funciones Lambda principales encargadas de crear y obtener Pokémon.
 
 ---
