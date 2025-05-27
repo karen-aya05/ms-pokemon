@@ -1,0 +1,13 @@
+{
+    "Parameters": {
+        "ProjectCode": "CL001",
+        "ProjectName": "Poke",
+        "Environment": "DEV",
+        "LevelLog": "ALL",
+        "PubliApiCognitoUserPool": "",
+        "ApiDomainName": "api.dev.poke",
+        "ApiStage": "v1",
+        "Alias": "",
+        "PokemonApiBaseUrl":"https://pokeapi.co"
+    }
+}
