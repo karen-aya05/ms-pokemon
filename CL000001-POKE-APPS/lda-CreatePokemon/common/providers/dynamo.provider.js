@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk')
-const logger = require('../../common/Logger/logger')
+const logger = require('../../common/utils/Logger/logger')
 const { POKEMON_DYNAMO_TABLE } = require('../constants')
 const { ERRORS } = require('../status-code')
 const dynamoDb = new AWS.DynamoDB.DocumentClient()

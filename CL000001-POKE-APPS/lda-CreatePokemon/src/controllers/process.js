@@ -1,6 +1,6 @@
 'use strict'
 
-const Logger = require('./common/Logger/logger')
+const Logger = require('../../common/utils/Logger/logger')
 const Service = require('../services/process')
 const { pokemonValidation } = require('../../common/utils/validation/paramsValidation')
 
@@ -8,7 +8,7 @@ const process = async (event) => {
   let result
   try {
     const body = JSON.parse(event.body)
-    const { error } = pokemonValidation(body)
+    const { error } =await pokemonValidation(body)
     if (error) {
       return {
         statusCode: 400,

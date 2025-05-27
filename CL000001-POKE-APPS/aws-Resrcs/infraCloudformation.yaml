@@ -80,7 +80,7 @@ Parameters:
   PokemonApiBaseUrl:
     Type: String
     Description: 'URL base de la API pública de Pokémon'
-    Default: https://pokeapi.co/api/v2/pokemon
+    Default: https://pokeapi.co
 
 
   ############### Logging ###############################

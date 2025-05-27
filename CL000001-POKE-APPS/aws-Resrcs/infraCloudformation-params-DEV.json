@@ -7,6 +7,7 @@
         "PubliApiCognitoUserPool": "",
         "ApiDomainName": "api.dev.poke",
         "ApiStage": "v1",
-        "Alias": ""
+        "Alias": "",
+        "PokemonApiBaseUrl":"https://pokeapi.co"
     }
 }

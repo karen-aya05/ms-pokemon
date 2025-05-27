@@ -1,17 +1,15 @@
 'use strict'
 
-const logger = require('../../common/Logger/logger')
+const logger = require('../../common/utils/Logger/logger')
 const HttpProvider = require('../../common/providers/http.provider')
 const DynamoProvider = require('../../common/providers/dynamo.provider')
 const { ERRORS } = require('../../common/status-code')
 
-const createPokemon = async (namePokemon) => {
+const createPokemon = async (body) => {
   try {
-    const dataPokemon = await HttpProvider.consultPokemon(namePokemon)
-    if (!dataPokemon) {
-      throw ERRORS.NOT_FOUND_POKEMON
-    }
-
+    const name= body.name
+    const dataPokemon = await HttpProvider.consultPokemon(name)
+    
     await DynamoProvider.savePokemon(dataPokemon)
 
     const data = {
