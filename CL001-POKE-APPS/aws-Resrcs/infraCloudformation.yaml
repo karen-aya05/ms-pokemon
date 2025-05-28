@@ -23,8 +23,6 @@ Metadata:
           default: 'ApiGateway'
         Parameters:
           - ApiStage
-          - ApiType
-          - ApiDomainName
     
 
 ############## Parameters ##################
@@ -76,12 +74,6 @@ Parameters:
     Description: 'Nombre del stage del API.'
     AllowedPattern: '^[a-z0-9-]*$'
     Default: dev
-  
-  ApiDomainName: 
-    Type: String
-    Description: 'Nombre del dominio'
-    Default: https://us-east-1feiej0isc.auth.us-east-1.amazoncognito.com
-
 
   PokemonApiBaseUrl:
     Type: String
@@ -94,15 +86,10 @@ Parameters:
   LevelLog:
     Type: String
     Description: 'Nivel de logging'
-    Default: 'ALL'
+    Default: 'INFO'
     AllowedValues:
-      - 'ALL'
-      - 'TRACE'
-      - 'DEBUG'
       - 'INFO'
-      - 'WARN'
       - 'ERROR'
-      - 'FATAL'
       - 'OFF'
   
  
@@ -120,7 +107,6 @@ Globals:
       Variables:
         APPID: !Join ['-', [!Ref ProjectCode, !Ref ProjectName]]
         ENVIRONMENT: !Ref Environment
-        LEVEL_LOG: !Ref LevelLog
      
     Tags:
         fdr:general:project-code: !Ref ProjectCode
@@ -130,15 +116,6 @@ Globals:
 ############## Resources ################################
 
 Resources:
-  ############## ApiGateway##############
-
-  ApiGatewayMapping:
-    Type: AWS::ApiGateway::BasePathMapping
-    Properties:
-      DomainName: !Ref ApiDomainName
-      RestApiId: !Ref PokemonRestApi
-      BasePath: !Ref ApiBasePath
-
 
   ############## Cognito ################################
 
@@ -212,7 +189,7 @@ Resources:
         - HttpMethod: '*'
           ResourcePath: '/*'
           MetricsEnabled: true
-          LoggingLevel: INFO
+          LoggingLevel: !Ref LevelLog
           DataTraceEnabled: true
           ThrottlingRateLimit: 14
           ThrottlingBurstLimit: 7
@@ -265,7 +242,7 @@ Resources:
                   statusCode: '200'
               x-amazon-apigateway-request-validator: RequestValidator
               x-amazon-apigateway-integration:
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionCreatePokemon.Arn}${Alias}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionCreatePokemon.Arn}/invocations
                 httpMethod: "POST"
                 type: "AWS"
                 responses:
@@ -309,7 +286,7 @@ Resources:
                   description: Bad Request  
               x-amazon-apigateway-request-validator: RequestValidator
               x-amazon-apigateway-integration:
-                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionGetPokemon.Arn}${Alias}/invocations
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionGetPokemon.Arn}/invocations
                 httpMethod: "POST"
                 type: "aws_proxy"
                 responses:
@@ -369,7 +346,7 @@ Resources:
           Projection:
             ProjectionType: "ALL"
       BillingMode: PAY_PER_REQUEST
-      TableName: !Sub "${ProjectCode}-${ProjectName}-Table-Pokemon-${Environment}"
+      TableName: !Sub "${ProjectCode}-${ProjectName}-Table-${Environment}"
       TimeToLiveSpecification:
         Enabled: true
         AttributeName: "TTL"
@@ -389,6 +366,13 @@ Resources:
       FunctionName:
         Fn::Sub: '${ProjectCode}-${ProjectName}-CreatePokemon-${Environment}-Lambda'
       InlineCode: exports.handler = async (event) => ({body:'Pending on upload'})
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PokemonRestApi
+            Path: /createPokemon
+            Method: POST
       Environment:
         Variables:
           POKEMON_DYNAMO_TABLE: !Ref PokemonTable
@@ -407,6 +391,13 @@ Resources:
       FunctionName:
         Fn::Sub: '${ProjectCode}-${ProjectName}-GetPokemon-${Environment}-Lambda'
       InlineCode: exports.handler = async (event) => ({body:'Pending on upload'})
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref PokemonRestApi
+            Path: /pokemons
+            Method: GET
       Environment:
         Variables:
           POKEMON_DYNAMO_TABLE: !Ref PokemonTable
@@ -427,7 +418,7 @@ Resources:
       FunctionName: !Sub ${FunctionCreatePokemon.Arn}${Alias}
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PokemonRestApi}/*/*/*
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PokemonRestApi}/*' 
 
   FunctionGetPokemonPermission:
     Type: AWS::Lambda::Permission
@@ -435,7 +426,7 @@ Resources:
       FunctionName: !Sub ${FunctionGetPokemon.Arn}${Alias}
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PokemonRestApi}/*/*/*
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PokemonRestApi}/*'
 
  
 

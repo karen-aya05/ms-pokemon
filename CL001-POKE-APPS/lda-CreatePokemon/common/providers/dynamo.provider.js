@@ -8,7 +8,7 @@ const savePokemon = async (data) => {
   const params = {
     TableName: POKEMON_DYNAMO_TABLE,
     Item: {
-      PK: data.id,
+      PK: String(data.id),
       SK: data.name,
       abilities: data.abilities,
       types: data.types,
