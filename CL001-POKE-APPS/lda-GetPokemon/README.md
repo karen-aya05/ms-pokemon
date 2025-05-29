@@ -28,4 +28,4 @@ Para la ejecución local, es necesario crear un archivo `.env` en el root del pr
 ENVIRONMENT=LOCAL
 LOCAL_AWS_PROFILE_NAME=dev
 AWS_REGION=us-east-1
-POKEMON_DYNAMO_TABLE=POKEMON_DYNAMO_TABLE
+POKEMON_DYNAMO_TABLE=CL001-Poke-Table-${ENV}

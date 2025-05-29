@@ -38,10 +38,10 @@ const getPokemonByName = async (name) => {
   try {
     const params = {
       TableName: POKEMON_DYNAMO_TABLE,
-      IndexName: 'GS1',
-      KeyConditionExpression: 'SK = :name',
+      KeyConditionExpression: "PK = :pk AND SK = :name",
       ExpressionAttributeValues: {
-        ':name': name.toLowerCase()
+        ":pk": "POKEMON",
+        ":name": name.toLowerCase()
       }
     }
     const result = await dynamoDb.query(params).promise()

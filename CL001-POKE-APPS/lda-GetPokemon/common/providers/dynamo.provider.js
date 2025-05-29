@@ -6,18 +6,17 @@ const { ERRORS } = require('../status-code')
 const dynamoDb = new AWS.DynamoDB.DocumentClient()
 
 const getPokemonByName = async (name) => {
-
   try {
     const params = {
       TableName: POKEMON_DYNAMO_TABLE,
-      IndexName: 'GS1',
-      KeyConditionExpression: 'SK = :name',
+      KeyConditionExpression: "PK = :pk AND SK = :name",
       ExpressionAttributeValues: {
-        ':name': name.toLowerCase()
+        ":pk": "POKEMON",
+        ":name": name.toLowerCase()
       }
     }
-
     const result = await dynamoDb.query(params).promise()
+    logger.info("Get Pokemon By Name: ", result)
     return result.Items.length > 0 ? result.Items[0] : null;
   } catch (error) {
     logger.error('Error getPokemonByName', error)
