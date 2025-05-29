@@ -22,8 +22,8 @@ const process = async (event) => {
 
     const response = await Service.getPokemons(name)
     result = {
-      statusCode: 200,
-      body: response
+     statusCode: 200,
+      body: JSON.stringify(response) 
     }
   } catch (error) {
     Logger.error('Error Service Process', error)

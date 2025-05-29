@@ -146,6 +146,13 @@ Resources:
 
 ############## RestAPI ################################
 
+  PokemonRestApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${ProjectCode}-${ProjectName}-Public-RestApi'
+      RetentionInDays: 14
+
+        
   PokemonRestApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -185,6 +192,9 @@ Resources:
               "title": $context.error.messageString,
               "detail": "$context.error.validationErrorString"
               }'
+      AccessLogSetting:
+        DestinationArn: !GetAtt PokemonRestApiLogGroup.Arn
+        Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","caller":"$context.identity.caller","user":"$context.identity.user","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","resourcePath":"$context.resourcePath","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}'
       MethodSettings:
         - HttpMethod: '*'
           ResourcePath: '/*'
@@ -213,7 +223,7 @@ Resources:
             validateRequestParameters: true
             validateRequestBody: true
         paths:
-          /createPokemon:
+          /pokemon:
             post:
               tags:
                 - "all"
@@ -244,7 +254,7 @@ Resources:
               x-amazon-apigateway-integration:
                 uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FunctionCreatePokemon.Arn}/invocations
                 httpMethod: "POST"
-                type: "AWS"
+                type: "aws_proxy"
                 responses:
                   default:
                     statusCode: '200'
@@ -371,7 +381,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref PokemonRestApi
-            Path: /createPokemon
+            Path: /pokemon
             Method: POST
       Environment:
         Variables:

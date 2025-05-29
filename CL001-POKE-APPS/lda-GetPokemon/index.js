@@ -11,7 +11,14 @@ const handler = async (event, context) => {
     return response
   } catch (error) {
     logger.error('Error in handler', error)
-    throw error
+    return {
+      statusCode: error.status || 500,
+      body: JSON.stringify({
+        detail: error.detail || '',
+        level: 'error',
+        title: error.title || 'Internal Server Error'
+      })
+    }
   }
 }
 

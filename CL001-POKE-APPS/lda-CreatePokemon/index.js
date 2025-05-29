@@ -1,6 +1,6 @@
 'use strict'
 
-const logger = require('./common/utils/Logger/logger') 
+const logger = require('./common/utils/Logger/logger')
 const Controller = require('./src/controllers/process')
 
 const handler = async (event, context) => {
@@ -11,7 +11,15 @@ const handler = async (event, context) => {
     return response
   } catch (error) {
     logger.error('Error in handler', error)
-    throw error
+    return {
+      statusCode: error.status || 500,
+      body: JSON.stringify({
+         title: error.title || 'Internal Server Error',
+        detail: error.detail || '',
+        level: error.level || 'error',
+       
+      })
+    }
   }
 }
 
