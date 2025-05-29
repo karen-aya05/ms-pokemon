@@ -393,7 +393,9 @@ Resources:
               Action:
                 - dynamodb:Query
                 - dynamodb:PutItem
-              Resource: !GetAtt PokemonTable.Arn
+              Resource:
+                - !GetAtt PokemonTable.Arn    
+                - !Sub '${PokemonTable.Arn}/index/GS1'    
 
   FunctionGetPokemon:
     Type: AWS::Serverless::Function
@@ -416,7 +418,9 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:Query
-              Resource: !GetAtt PokemonTable.Arn
+              Resource:
+                - !GetAtt PokemonTable.Arn    
+                - !Sub '${PokemonTable.Arn}/index/GS1'    
 
   
 

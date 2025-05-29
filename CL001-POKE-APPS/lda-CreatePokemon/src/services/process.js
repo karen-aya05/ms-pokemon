@@ -7,21 +7,17 @@ const { ERRORS } = require('../../common/status-code')
 
 const createPokemon = async (body) => {
   try {
-    const name= body.name
-    const dataPokemon = await HttpProvider.consultPokemon(name)
-    
-    await DynamoProvider.savePokemon(dataPokemon)
-
-    const data = {
-      name: dataPokemon.nombre,
-      abilities: dataPokemon.abilities,
-      types: dataPokemon.types,
-      order: dataPokemon.order,
-      stats: dataPokemon.stats,
-      image: dataPokemon.sprites.front_default || dataPokemon.other.front_default
+    const name = body.name
+    const existsPokemon = await DynamoProvider.getPokemonByName(name)
+    if (!existsPokemon) {
+      const dataPokemon = await HttpProvider.consultPokemon(name)
+      await DynamoProvider.savePokemon(dataPokemon)
+      const response = { message: `Pokémon '${dataPokemon.name}' created successfully` };
+      return response
+    } else {
+      return ERRORS.EXISTING_POKEMON
     }
 
-    return data
   } catch (error) {
     logger.error('Error in createPokemon service', error)
     throw error

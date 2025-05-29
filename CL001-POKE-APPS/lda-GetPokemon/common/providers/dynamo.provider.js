@@ -6,20 +6,19 @@ const { ERRORS } = require('../status-code')
 const dynamoDb = new AWS.DynamoDB.DocumentClient()
 
 const getPokemonByName = async (name) => {
-  const params = {
-    TableName: POKEMON_DYNAMO_TABLE,
-    KeyConditionExpression: 'PK = :name',
-    ExpressionAttributeValues: {
-      ':name': name.toLowerCase()
-    }
-  }
 
   try {
-    const result = await dynamoDb.query(params).promise()
-    if (result.Items.length === 0) {
-      return null
+    const params = {
+      TableName: POKEMON_DYNAMO_TABLE,
+      IndexName: 'GS1',
+      KeyConditionExpression: 'SK = :name',
+      ExpressionAttributeValues: {
+        ':name': name.toLowerCase()
+      }
     }
-    return result.Items[0]
+
+    const result = await dynamoDb.query(params).promise()
+    return result.Items.length > 0 ? result.Items[0] : null;
   } catch (error) {
     logger.error('Error getPokemonByName', error)
     throw ERRORS.POKEMON_DATA
@@ -29,11 +28,10 @@ const getPokemonByName = async (name) => {
 const getAllPokemons = async () => {
   const params = {
     TableName: POKEMON_DYNAMO_TABLE,
-    KeyConditionExpression: 'PK = :pk',
-    ExpressionAttributeValues: {
-      ':pk': 'POKEMON'
-    }
-  }
+    ExpressionAttributeNames: { '#PK': 'PK' },
+    ExpressionAttributeValues: { ':PK': 'POKEMON' },
+    KeyConditionExpression: '#PK = :PK'
+  };
 
   try {
     const result = await dynamoDb.query(params).promise()

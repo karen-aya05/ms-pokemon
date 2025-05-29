@@ -8,8 +8,9 @@ const savePokemon = async (data) => {
   const params = {
     TableName: POKEMON_DYNAMO_TABLE,
     Item: {
-      PK: String(data.id),
+      PK: "POKEMON",
       SK: data.name,
+      id: data.id,
       abilities: data.abilities,
       types: data.types,
       order: data.order,
@@ -32,6 +33,28 @@ const savePokemon = async (data) => {
   }
 }
 
+
+const getPokemonByName = async (name) => {
+  try {
+    const params = {
+      TableName: POKEMON_DYNAMO_TABLE,
+      IndexName: 'GS1',
+      KeyConditionExpression: 'SK = :name',
+      ExpressionAttributeValues: {
+        ':name': name.toLowerCase()
+      }
+    }
+    const result = await dynamoDb.query(params).promise()
+    logger.info("Get Pokemon By Name: ", result)
+    return result.Items.length > 0 ? result.Items[0] : null;
+  } catch (error) {
+    logger.error('Error getPokemonByName', error)
+    throw ERRORS.POKEMON_DATA
+  }
+}
+
+
 module.exports = {
-  savePokemon
+  savePokemon,
+  getPokemonByName
 }
